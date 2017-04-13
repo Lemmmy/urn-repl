@@ -1,0 +1,8 @@
+{
+  "listen": 80,
+  "dockerSock": "/var/run/docker.sock",
+  "image": "urn-repl",
+  "memory": 67108864,
+  "cpuPeriod": 100000,
+  "cpuQuota": 50000
+}

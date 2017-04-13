@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<title>REPL | Urn</title>
+
+	<link rel="stylesheet" href="/xterm/xterm.css">
+	<link rel="stylesheet" href="/main.css">
+</head>
+<body>
+	<div id="terminal"></div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+	<script src="/xterm/xterm.js"></script>
+	<script src="/xterm/addons/fit/fit.js"></script>
+
+	<script>
+		$(function() {
+			var xterm = new Terminal();
+			var socket = io.connect(window.location.hostname + (
+				window.location.port != 80 || window.location.port != 443 ?
+				":" + window.location.port :
+				""
+			));
+
+			xterm.open($("#terminal")[0]);
+
+			xterm.on("data", function(data) {
+				socket.emit("stdin", data);
+			});
+
+			xterm.on("resize", function(size) {
+				socket.emit("resize", {
+					w: size.cols,
+					h: size.rows
+				});
+			});
+
+			socket.on("stdout", function(data) {
+				xterm.write(data);
+			});
+
+			socket.on("stderr", function(data) {
+				xterm.write(data);
+			});
+
+			xterm.fit();
+
+			$("body").on("resize", function() {
+				xterm.fit();
+			});
+		});
+	</script>
+</body>
+</html>

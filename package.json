@@ -1,0 +1,14 @@
+{
+  "name": "urn-repl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Lemmmy",
+  "license": "ISC",
+  "dependencies": {
+    "dockerode": "^2.4.3",
+    "express": "^4.15.2",
+    "socket.io": "^1.7.3",
+    "xterm": "^2.5.0"
+  }
+}
