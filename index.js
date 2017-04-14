@@ -1,16 +1,12 @@
 const config = require("./config.json");
 
 const express = require("express");
-const http = require("http");
-const SocketIO = require("socket.io");
 const Docker = require("dockerode");
 
 const app = express();
-const server = http.Server(app);
-const io = SocketIO(server);
-const docker = new Docker({ socketPath: config.dockerSock });
+const expressWs = require("express-ws")(app);
 
-server.listen(config.listen);
+const docker = new Docker({ socketPath: config.dockerSock });
 
 app.use("/", express.static(__dirname + "/static"));
 app.use("/xterm", express.static(__dirname + "/node_modules/xterm/dist"));
@@ -19,7 +15,17 @@ app.get("/", (req, res) => {
 	res.sendFile(__dirname + "/index.html");
 });
 
-io.on("connection", socket => {
+function send(socket, type, data) {
+	socket.send(JSON.stringify({ "type": type, "data": data }));
+}
+
+app.ws("/repl", (socket, req) => {
+	send(socket, "stdout", "loading...\n");
+
+	setTimeout(() => {
+		send(socket, "ping", new Date());
+	}, 3000);
+
 	docker.createContainer({
 		Image: config.image,
 		AttachStdin: true,
@@ -36,7 +42,7 @@ io.on("connection", socket => {
 		CpuPeriod: config.cpuPeriod,
 		CpuQuota: config.cpuQuota
 	})).then(container => {
-		socket.emit("ready", "ok");
+		send(socket, "ready");
 
 		return container.attach({
 			stream: true,
@@ -45,23 +51,33 @@ io.on("connection", socket => {
 			stderr: true
 		});
 	}).then(stream => {
-		stream.on("data", stdout => socket.emit("stdout", stdout.toString()));
-		stream.on("error", stderr => socket.emit("stderr", stderr.toString()));
+		stream.on("data", stdout => send(socket, "stdout", stdout.toString()));
+		stream.on("error", stderr => send(socket, "stderr", stderr.toString()));
 
-		socket.on("stdin", stdin => stream.write(stdin));
-		socket.on("resize", dimensions => {
-			socket.container.resize({
-				w: dimensions.w,
-				h: dimensions.h
-			}).catch(err => {
-				console.error(err);
+		socket.on("message", data => {
+			try {
+				let message = JSON.parse(data);
 
-				socket.emit("err", "There was an error resizing the container.");
-				socket.disconnect(0);
-			});
+				switch (message.type) {
+					case "stdin":
+						stream.write(message.data);
+						break;
+					case "resize":
+						socket.container.resize({
+							w: message.data.w,
+							h: message.data.h
+						}).catch(err => {
+							console.error(err);
+
+							send(socket, "err", "There was an error resizing the container.");
+							socket.disconnect(0);
+						});
+						break;
+				}
+			} catch(whatever) {}
 		});
 
-		socket.on("disconnect", () => {
+		socket.on("close", () => {
 			console.log(`Closing container ${socket.container.id}`);
 
 			socket.container.stop()
@@ -71,14 +87,16 @@ io.on("connection", socket => {
 
 					console.error(err);
 
-					socket.emit("err", "There was an error closing the container.");
+					send(socket, "err", "There was an error closing the container.");
 					socket.disconnect(0);
 				});
 		});
 	}).catch(err => {
 		console.error(err);
 
-		socket.emit("err", "There was an error creating the container.");
+		send(socket, "err", "There was an error creating the container.");
 		socket.disconnect(0);
 	});
 });
+
+app.listen(config.listen);
