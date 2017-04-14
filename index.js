@@ -16,7 +16,9 @@ app.get("/", (req, res) => {
 });
 
 function send(socket, type, data) {
-	socket.send(JSON.stringify({ "type": type, "data": data }));
+	if (socket.readyState === 1) {
+		socket.send(JSON.stringify({"type": type, "data": data}));
+	}
 }
 
 function ping(socket) {
@@ -57,7 +59,15 @@ app.ws("/repl", (socket, req) => {
 			stderr: true
 		});
 	}).then(stream => {
-		stream.on("data", stdout => send(socket, "stdout", stdout.toString()));
+		stream.on("data", stdout => {
+			if (!socket.containerConnected) {
+				socket.containerConnected = true;
+
+				send(socket, "stdout", "\033[2J\033[1;1H");
+			}
+
+			send(socket, "stdout", stdout.toString());
+		});
 		stream.on("error", stderr => send(socket, "stderr", stderr.toString()));
 
 		socket.on("message", data => {

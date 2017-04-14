@@ -24,11 +24,11 @@
 			socket.onopen = function() {
 				xterm.open($("#terminal")[0]);
 
-				xterm.on("data", function (data) {
+				xterm.on("data", function(data) {
 					socket.send(JSON.stringify({type: "stdin", data: data}));
 				});
 
-				xterm.on("resize", function (size) {
+				xterm.on("resize", function(size) {
 					socket.send(JSON.stringify({
 						type: "resize",
 						data: {
@@ -38,7 +38,7 @@
 					}));
 				});
 
-				socket.onmessage = function (data) {
+				socket.onmessage = function(data) {
 					var message = JSON.parse(data.data);
 
 					switch (message.type) {
@@ -47,9 +47,13 @@
 							xterm.write(message.data);
 							break;
 						case "ping":
-							socket.send(JSON.Stringify({type: "pong", data: new Date()}));
+							socket.send(JSON.stringify({type: "pong", data: new Date()}));
 							break;
 					}
+				};
+
+				socket.onclose = function(data) {
+					console.log(data);
 				};
 
 				xterm.fit();
