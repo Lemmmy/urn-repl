@@ -18,4 +18,4 @@ WORKDIR /urn
 RUN make all -j4
 
 COPY urn-repl.lua urn-repl.lua
-ENTRYPOINT sleep 1; rlwrap lua5.3 urn-repl.lua
+ENTRYPOINT echo "urn-repl"; sleep 1; rlwrap lua5.3 urn-repl.lua
