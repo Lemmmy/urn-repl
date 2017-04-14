@@ -19,12 +19,16 @@ function send(socket, type, data) {
 	socket.send(JSON.stringify({ "type": type, "data": data }));
 }
 
-app.ws("/repl", (socket, req) => {
-	send(socket, "stdout", "loading...\n");
-
+function ping(socket) {
 	setTimeout(() => {
 		send(socket, "ping", new Date());
 	}, 3000);
+}
+
+app.ws("/repl", (socket, req) => {
+	send(socket, "stdout", "loading...\r\n");
+
+	ping(socket);
 
 	docker.createContainer({
 		Image: config.image,
