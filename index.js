@@ -53,22 +53,32 @@ io.on("connection", socket => {
 			socket.container.resize({
 				w: dimensions.w,
 				h: dimensions.h
-			}).catch(() => {
-				socket.emit("error", "There was an error resizing the container.");
-				socket.close(true);
+			}).catch(err => {
+				console.error(err);
+
+				socket.emit("err", "There was an error resizing the container.");
+				socket.disconnect(0);
 			});
 		});
 
 		socket.on("disconnect", () => {
+			console.log(`Closing container ${socket.container.id}`);
+			
 			socket.container.stop()
-				.then(container => container.remove())
-				.catch(() => {
-					socket.emit("error", "There was an error closing the container.");
-					socket.close(true);
+				.then(() => socket.container.remove())
+				.catch(err => {
+					if (err.statusCode === 304) return; // 'container already stopped' error - who cares
+
+					console.error(err);
+
+					socket.emit("err", "There was an error closing the container.");
+					socket.disconnect(0);
 				});
 		});
-	}).catch(() => {
-		socket.emit("error", "There was an error creating the container.");
-		socket.close(true);
+	}).catch(err => {
+		console.error(err);
+
+		socket.emit("err", "There was an error creating the container.");
+		socket.disconnect(0);
 	});
 });
