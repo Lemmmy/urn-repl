@@ -22,6 +22,8 @@ function send(socket, type, data) {
 function ping(socket) {
 	setTimeout(() => {
 		send(socket, "ping", new Date());
+
+		ping(socket);
 	}, 3000);
 }
 
