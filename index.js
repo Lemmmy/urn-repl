@@ -63,7 +63,7 @@ io.on("connection", socket => {
 
 		socket.on("disconnect", () => {
 			console.log(`Closing container ${socket.container.id}`);
-			
+
 			socket.container.stop()
 				.then(() => socket.container.remove())
 				.catch(err => {
