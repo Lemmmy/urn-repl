@@ -4,7 +4,6 @@ RUN apt-get update
 RUN apt-get install -y make
 RUN apt-get install -y git
 RUN apt-get install -y lua5.3
-RUN apt-get install -y rlwrap
 
 RUN useradd -ms /bin/sh urn
 
@@ -18,4 +17,4 @@ WORKDIR /urn
 RUN make all -j4
 
 COPY urn-repl.lua urn-repl.lua
-ENTRYPOINT echo "urn-repl"; sleep 1; rlwrap lua5.3 urn-repl.lua
+ENTRYPOINT lua5.3 urn-repl.lua
