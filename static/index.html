@@ -19,7 +19,8 @@
 	<script>
 		$(function() {
 			var xterm = new Terminal();
-			var socket = new WebSocket("ws://urn-repl.lemmmy.pw/repl");
+			var s = location.protocol === "https:" ? "s" : "";
+			var socket = new WebSocket("ws" + s + "://urn-repl.lemmmy.pw/repl");
 
 			socket.onopen = function() {
 				xterm.open($("#terminal")[0]);
