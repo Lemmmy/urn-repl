@@ -14,7 +14,7 @@ RUN chown urn /urn -R
 USER urn
 WORKDIR /urn
 
-RUN make all -j4
+RUN make LUA=lua5.3 all -j4
 
 COPY urn-repl.lua urn-repl.lua
 ENTRYPOINT lua5.3 urn-repl.lua
